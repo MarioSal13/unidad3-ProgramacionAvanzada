@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vuejs</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f5f7fa;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        #app {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: #ffffff;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+    </style>
+</head>
+<body>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+    <div id="app">
+        <label> Listas </label>
+        <ul>
+            <li v-for="(show, index) in usuarios" :key="index">
+                {{show.nombre}} : {{show.apellido}}
+            </li>
+        </ul>
+
+        <label> Nombre(s) </label>
+        <input type="text"  v-model="nomb">
+        <label> Apellido(s) </label>
+        <input type="text" v-model="apell">
+        <button @click="AgreUsuario()"> Guardar regristro </button>
+
+    </div>
+    
+    <script>
+        const { createApp, ref } = Vue
+      
+        createApp({
+          setup() {
+
+            const nomb = ref()
+            const apell = ref()
+            const usuarios = ref([
+                    {
+                        nombre:"juan",
+                        apellido:"Martinez"
+                    }
+
+            ])
+            return { 
+              usuarios,
+              nomb,
+              apell
+
+            }
+          },
+          methods: {
+            AgreUsuario(){
+                const nuevoUsuario = {
+                        "nombre": this.nomb,
+                        "apellido": this.apell
+                    }
+            
+                this.usuarios.push(nuevoUsuario)
+            }
+         }
+
+        }).mount('#app')
+      </script>
+
+</body>
+</html>
