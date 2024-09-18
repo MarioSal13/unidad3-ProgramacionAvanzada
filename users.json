@@ -1,0 +1,64 @@
+{
+    "version":"20110917",
+    "users":[
+      {
+        "name":"kisin",
+        "id":"7000f",
+        "email":"elkisin@gamil.com",
+        "password":12345,
+        "avatarId":"70010",
+        "license":"Editor",
+        "admin":true,
+        "date":1310654350393,
+        "archived":false,
+        "invited":false,
+        "licensed":true,
+        "locked":false,
+        "businessUnit":
+            { "id": "150005", "name": "Mi casa" }
+      },
+      {
+        "name":"elpepe",
+        "id":"70022",
+        "email":"elpepeEtesech@gamil.com",
+        "password":12345,
+        "license":"Community",
+        "admin":false,
+        "archived":false,
+        "invited":false,
+        "licensed":true,
+        "locked":false,
+        "businessUnit":
+            { "id": "150006", "name": "ETE SECH" }
+      },
+      {
+        "name":"XDXDXD",
+        "id":"70021",
+        "email":"merobaronelboiler@gamil.com",
+        "password":12345,
+        "license":"Contributor",
+        "admin":false,
+        "archived":false,
+        "invited":false,
+        "licensed":true,
+        "locked":false,
+        "businessUnit":
+            { "id": "150007", "name": "XDXDX.INC" }
+      },
+      {
+        "name":"momazos francisss",
+        "id":"70020",
+        "email":"momazosFrancis@gamil.com",
+        "password":12345,
+        "license":"Viewer",
+        "admin":false,
+        "date":1310653543628,
+        "archived":false,
+        "invited":false,
+        "licensed":true,
+        "locked":false,
+        "businessUnit":
+            { "id": "150008", "name": "La Uabcs" }
+      }
+    ]
+  }

@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vue.js Login</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f5f7fa;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        #app {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: #ffffff;
+            border-radius: 10px;
+            padding: 40px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            max-width: 600px;
+            width: 100%;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+
+        label {
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        input {
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+        }
+
+        button {
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            overflow-x: auto;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+        }
+
+        th, td {
+            padding: 15px;
+            border-bottom: 1px solid #ddd;
+            text-align: left;
+            background-color: #f9f9f9;
+        }
+
+        th {
+            background-color: #007bff;
+            color: white;
+            font-weight: bold;
+            border-radius: 10px 10px 0 0;
+        }
+
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        @media (max-width: 600px) {
+            #app {
+                padding: 20px;
+            }
+
+            table, th, td {
+                font-size: 14px;
+                padding: 10px;
+            }
+        }
+
+    </style>
+</head>
+<body>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+    <div id="app">
+        <form v-if="!isLoggedIn" @submit.prevent="onSubmit">
+            <label for="correo">Correo:</label>
+            <input type="email" id="correo" name="correo" v-model="email" required>
+
+            <label for="pass">Contraseña:</label>
+            <input type="password" id="pass" name="pass" v-model="passw" required>
+
+            <button type="submit">Acceder</button>
+        </form>
+
+        <!-- Area to display user list -->
+        <table v-if="isLoggedIn && userList.length > 0">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Email</th>
+                    <th>Licencia</th>
+                    <th>Unidad de Negocio</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr v-for="user in userList" :key="user.email">
+                    <td>{{ user.name }}</td>
+                    <td>{{ user.email }}</td>
+                    <td>{{ user.license }}</td>
+                    <td>{{ user.businessUnit.name }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    
+    <script>
+        const { createApp, ref } = Vue;
+
+        createApp({
+            setup() {
+                var email = ref('');
+                var passw = ref('');
+                var userList = ref([]);
+                var isLoggedIn = ref(false); 
+
+                return { 
+                    email,
+                    passw,
+                    userList,
+                    isLoggedIn
+                };
+            },
+            methods: {
+                async onSubmit() {
+                    try {
+                        const response = await fetch("users.json");
+                        if (!response.ok) {
+                            throw new Error(`Response status: ${response.status}`);
+                        }
+
+                        const json = await response.json();
+                        var userFound = false;
+
+                        json.users.forEach(user => {
+                            if (user.email == this.email && user.password == this.passw) {
+                                userFound = true;
+                                this.isLoggedIn = true;
+                                sessionStorage.setItem('Usuario', JSON.stringify({ nombre: user.name, email: this.email }));
+                                this.userList = json.users;
+                                this.showNotification("WELLLCCOOMMM STRANGER", "haz iniciado sesion");
+
+                                console.log("Login hecho");
+                            }
+                        });
+
+                        if (!userFound) {
+                            console.log("Invalid email or password.");
+                        }
+
+                    } catch (error) {
+                        console.error(error.message);
+                    }
+                },
+                showNotification(title, message) {
+                    if (Notification.permission === "granted") {
+                        new Notification(title, { body: message });
+                        
+                    } else if (Notification.permission !== "denied") {
+                        Notification.requestPermission().then(permission => {
+                            if (permission === "granted") {
+                                new Notification(title, { body: message });
+                            }
+                        });
+                    }
+                }
+            },
+            mounted() {
+                
+                if (Notification.permission !== "granted") {
+                    Notification.requestPermission();
+                }
+            }
+        }).mount('#app');
+    </script>
+
+</body>
+</html>
