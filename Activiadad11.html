@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vuejs</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f5f7fa;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        #app {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: #ffffff;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+    </style>
+</head>
+<body>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+    <div id="app">
+        <form @submit.prevent="onSubmit">
+            <label for="">Correo:</label>
+            <input type="email" id="correo" name="correo" v-model="email" required>
+
+            <label for="">Contraseña:</label>
+            <input type="password" id="pass" name="pass" v-model="passw" required>
+
+            <button type="submit"> acceder </button>
+
+        </form>
+
+    </div>
+    
+    <script>
+        const { createApp, ref } = Vue
+      
+        createApp({
+          setup() {
+
+            let email = ref('');
+            let passw = ref('');
+                      
+
+            return { 
+              email,
+              passw
+
+            }
+          },
+          methods: {
+
+            async onSubmit(){
+                try {
+                const response = await fetch("users.json");
+                if (!response.ok) {
+                    throw new Error(`Response status: ${response.status}`);
+                }
+
+                const json = await response.json();
+
+                //console.log(json);
+                
+                json.users.forEach(e => {
+                    console.log(e.email);
+                    console.log(e.passw);
+
+                    console.log(this.email)
+                    console.log(this.passw)
+                    
+                    
+                    if(e.email == this.email && e.passw == this.passw){
+                        console.log("si");
+                    }else{
+                        console.log("no we");
+                        
+                    }
+                });
+                            
+                } catch (error) {
+                    console.error(error.message);
+                }
+                
+                
+            }
+                      
+         }
+
+        }).mount('#app')
+      </script>
+
+</body>
+</html>
