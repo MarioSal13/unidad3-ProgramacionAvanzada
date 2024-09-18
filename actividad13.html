@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vue.js Login</title>
+    <style>
+       /* Estilos generales */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        /* Estilo del formulario */
+        form {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            width: 100%;
+            margin: 20px auto;
+        }
+
+        form label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        form input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        form button {
+            width: 100%;
+            padding: 10px;
+            background-color: #3498db;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+        form button:hover {
+            background-color: #2980b9;
+        }
+
+        /* Estilo de la tabla */
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        table thead {
+            background-color: #3498db;
+            color: #fff;
+        }
+
+        table th, table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #ccc;
+        }
+
+        table tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        .edit-btn, .delete-btn {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .edit-btn {
+            background-color: #f39c12;
+            color: #fff;
+        }
+
+        .edit-btn:hover {
+            background-color: #e67e22;
+        }
+
+        .delete-btn {
+            background-color: #e74c3c;
+            color: #fff;
+        }
+
+        .delete-btn:hover {
+            background-color: #c0392b;
+        }
+
+        /* Botón de nuevo usuario */
+        button[click] {
+            background-color: #2ecc71;
+            color: #fff;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background-color 0.3s;
+        }
+
+        button[click]:hover {
+            background-color: #27ae60;
+        }
+
+    </style>
+</head>
+<body>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+    <div id="app">
+        <form v-if="!isLoggedIn" @submit.prevent="onSubmit">
+            <label for="correo">Correo:</label>
+            <input type="email" id="correo" name="correo" v-model="email" required>
+
+            <label for="pass">Contraseña:</label>
+            <input type="password" id="pass" name="pass" v-model="passw" required>
+
+            <button type="submit">Acceder</button>
+        </form>
+
+        <table v-if="isLoggedIn && !newUser">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Email</th>
+                    <th>Licencia</th>
+                    <th>Unidad de Negocio</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr v-for="user in userList" :key="user.email">
+                    <td>{{ user.name }}</td>
+                    <td>{{ user.email }}</td>
+                    <td>{{ user.license }}</td>
+                    <td>{{ user.businessUnit.name }}</td>
+                    <td><button class="edit-btn">editar</button></td>
+                    <td><button class="delete-btn">borrar</button></td>
+                </tr>
+            </tbody>
+            <button v-if="isLoggedIn && !newUser" @click="newUser = true">Nuevo usuario</button>
+        </table>
+
+        <form v-if="newUser" @submit.prevent="saveUser">
+            <label for="nombre">Nombre:</label>
+            <input type="text" id="nombre" v-model="nombre" required><br><br>
+
+            <label for="email">Correo Electrónico:</label>
+            <input type="email" id="email" v-model="formEmail" required><br><br>
+
+            <label for="licencia">Licencia:</label>
+            <input type="text" id="licencia" v-model="licencia" required><br><br>
+
+            <label for="negocio">Unidad de Negocio:</label>
+            <input type="text" id="negocio" v-model="negocio" required><br><br>
+
+            <button @click="newUser = false">Cancelar</button>
+            <button type="submit">Guardar</button>
+        </form>
+    </div>
+
+    <script>
+        const { createApp, ref } = Vue;
+
+        createApp({
+            setup() {
+                var email = ref('');
+                var passw = ref('');
+                var userList = ref([]);
+                var isLoggedIn = ref(false); 
+
+                var nombre = ref('');
+                var formEmail = ref('');
+                var licencia = ref('');
+                var negocio = ref('');
+
+                var newUser = ref(false);
+
+                return { 
+                    email,
+                    passw,
+                    userList,
+                    isLoggedIn,
+                    nombre,
+                    formEmail,
+                    licencia,
+                    negocio,
+                    newUser
+                };
+            },
+            methods: {
+                async onSubmit() {
+                    try {
+                        const response = await fetch("users.json");
+                        if (!response.ok) {
+                            throw new Error(`Response status: ${response.status}`);
+                        }
+
+                        const json = await response.json();
+                        var userFound = false;
+
+                        json.users.forEach(user => {
+                            if (user.email == this.email && user.password == this.passw) {
+                                userFound = true;
+                                this.isLoggedIn = true;
+                                sessionStorage.setItem('Usuario', JSON.stringify({ nombre: user.name, email: this.email }));
+                                this.userList = json.users;
+                                this.showNotification("WELLLCCOOMMM STRANGER", "haz iniciado sesion");
+
+                                console.log("Login hecho");
+                            }
+                        });
+
+                        if (!userFound) {
+                            console.log("Invalid email or password.");
+                        }
+
+                    } catch (error) {
+                        console.error(error.message);
+                    }
+                },
+                showNotification(title, message) {
+                    if (Notification.permission === "granted") {
+                        new Notification(title, { body: message });
+                    } else if (Notification.permission !== "denied") {
+                        Notification.requestPermission().then(permission => {
+                            if (permission === "granted") {
+                                new Notification(title, { body: message });
+                            }
+                        });
+                    }
+                },
+                saveUser() {
+                    const useTemp = {
+                        name: this.nombre,
+                        email: this.formEmail,
+                        license: this.licencia,
+                        businessUnit: { name: this.negocio }
+                    };
+                    this.newUser = false;
+                    this.userList.push(useTemp);
+
+                }
+            },
+            mounted() {
+                if (Notification.permission !== "granted") {
+                    Notification.requestPermission();
+                }
+            }
+        }).mount('#app');
+    </script>
+
+</body>
+</html>
