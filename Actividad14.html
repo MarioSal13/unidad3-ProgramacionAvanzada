@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vue.js Login and CRUD</title>
+    <style>
+        /* General Styles */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        #app {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            width: 500px;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input[type="email"],
+        input[type="password"],
+        input[type="text"] {
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            vertical-align: middle; 
+        }
+
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        .edit-btn, .delete-btn {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .edit-btn {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .edit-btn:hover {
+            background-color: #218838;
+        }
+
+        .delete-btn {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .delete-btn:hover {
+            background-color: #c82333;
+        }
+
+        td button {
+            margin-right: 5px; /* Espaciado entre botones de la tabla */
+        }
+
+        /* Botones de abajo */
+        #app > button {
+            margin-top: 10px;
+            margin-right: 10px; /* Espaciado entre los botones de nuevo usuario y cerrar sesión */
+        }
+
+        /* Responsive */
+        @media screen and (max-width: 768px) {
+            #app {
+                width: 100%;
+                padding: 10px;
+            }
+
+            table {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+
+        <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+        <!-- Formulario de inicio de sesión -->
+        <form v-if="!isLoggedIn" @submit.prevent="onSubmit">
+            <label for="correo">Correo:</label>
+            <input type="email" id="correo" name="correo" v-model="email" required>
+
+            <label for="pass">Contraseña:</label>
+            <input type="password" id="pass" name="pass" v-model="passw" required>
+
+            <button type="submit">Acceder</button>
+        </form>
+
+
+        <table v-if="isLoggedIn && !newUser">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Email</th>
+                    <th>Licencia</th>
+                    <th>Unidad de Negocio</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr v-for="user in userList" :key="user.email">
+                    <td>{{ user.name }}</td>
+                    <td>{{ user.email }}</td>
+                    <td>{{ user.license }}</td>
+                    <td>{{ user.businessUnit.name }}</td>
+                    <td><button class="edit-btn" @click="editUser(user)">editar</button></td>
+                    <td><button class="delete-btn" @click="deleteUser(user)">borrar</button></td>
+                </tr>
+            </tbody>
+        </table>
+        <button v-if="isLoggedIn && !newUser" @click="newUser = true">Nuevo usuario</button>
+        <button v-if="isLoggedIn" @click="logout">Cerrar sesión</button>
+
+
+        <form v-if="newUser" @submit.prevent="saveUser">
+            <label for="nombre">Nombre:</label>
+            <input type="text" id="nombre" v-model="nombre" required>
+
+            <label for="email">Correo Electrónico:</label>
+            <input type="email" id="email" v-model="formEmail" required>
+
+            <label for="licencia">Licencia:</label>
+            <input type="text" id="licencia" v-model="licencia" required>
+
+            <label for="negocio">Unidad de Negocio:</label>
+            <input type="text" id="negocio" v-model="negocio" required>
+
+            <button @click="newUser = false; editingUser = null">Cancelar</button>
+            <button type="submit">Guardar</button>
+        </form>
+    </div>
+
+    <script>
+        const { createApp, ref } = Vue;
+
+        createApp({
+            setup() {
+                var email = ref('');
+                var passw = ref('');
+                var userList = ref([]);
+                var isLoggedIn = ref(false);
+
+                var nombre = ref('');
+                var formEmail = ref('');
+                var licencia = ref('');
+                var negocio = ref('');
+
+                var newUser = ref(false);
+                var editingUser = ref(null);  // Para almacenar el usuario que se va a editar
+
+                return {
+                    email,
+                    passw,
+                    userList,
+                    isLoggedIn,
+                    nombre,
+                    formEmail,
+                    licencia,
+                    negocio,
+                    newUser,
+                    editingUser
+                };
+            },
+            methods: {
+                async onSubmit() {
+                    try {
+                        const response = await fetch("users.json");
+                        if (!response.ok) {
+                            throw new Error(`Response status: ${response.status}`);
+                        }
+
+                        const json = await response.json();
+                        var userFound = false;
+
+                        json.users.forEach(user => {
+                            if (user.email == this.email && user.password == this.passw) {
+                                userFound = true;
+                                this.isLoggedIn = true;
+                                sessionStorage.setItem('Usuario', JSON.stringify({ nombre: user.name, email: this.email }));
+                                this.userList = json.users;
+                                this.showNotification("Bienvenido", "Haz iniciado sesión correctamente");
+                            }
+                        });
+
+                        if (!userFound) {
+                            console.log("Email o contraseña inválidos.");
+                        }
+
+                    } catch (error) {
+                        console.error(error.message);
+                    }
+                },
+                showNotification(title, message) {
+                    if (Notification.permission === "granted") {
+                        new Notification(title, { body: message });
+                    } else if (Notification.permission !== "denied") {
+                        Notification.requestPermission().then(permission => {
+                            if (permission === "granted") {
+                                new Notification(title, { body: message });
+                            }
+                        });
+                    }
+                },
+                saveUser() {
+                    if (this.editingUser) {
+                        this.editingUser.name = this.nombre;
+                        this.editingUser.email = this.formEmail;
+                        this.editingUser.license = this.licencia;
+                        this.editingUser.businessUnit.name = this.negocio;
+                        this.editingUser = null;
+                    } else {
+                        const newUser = {
+                            name: this.nombre,
+                            email: this.formEmail,
+                            license: this.licencia,
+                            businessUnit: { name: this.negocio }
+                        };
+                        this.userList.push(newUser);
+                    }
+
+                    this.nombre = "";
+                    this.formEmail = "";
+                    this.licencia = "";
+                    this.negocio = "";
+                    this.newUser = false;
+                },
+                editUser(user) {
+                    this.nombre = user.name;
+                    this.formEmail = user.email;
+                    this.licencia = user.license;
+                    this.negocio = user.businessUnit.name;
+
+                    this.editingUser = user;
+                    this.newUser = true;
+                },
+                deleteUser(user) {
+                    this.userList = this.userList.filter(u => u.email !== user.email);
+                },
+                logout() {
+                    sessionStorage.removeItem('Usuario');
+                    this.isLoggedIn = false;
+                    this.email = '';
+                    this.passw = '';
+                },
+                checkSession() {
+                    const savedUser = JSON.parse(sessionStorage.getItem('Usuario'));
+                    if (savedUser) {
+                        this.isLoggedIn = true;
+                        this.email = savedUser.email;
+                    }
+                },async loadUsers(){
+                    try {
+                        const response = await fetch("users.json");
+                        if (!response.ok) {
+                            throw new Error(`Response status: ${response.status}`);
+                        }
+
+                        const json = await response.json();
+
+                        json.users.forEach(user => {
+                            this.isLoggedIn = true;
+                            sessionStorage.setItem('Usuario', JSON.stringify({ nombre: user.name, email: this.email }));
+                            this.userList = json.users;
+                        });
+
+                    } catch (error) {
+                        console.error(error.message);
+                    }
+                }
+            },
+            mounted() {
+                if (Notification.permission !== "granted") {
+                    Notification.requestPermission();
+                }
+                this.checkSession();
+                this.loadUsers();
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
+
+
