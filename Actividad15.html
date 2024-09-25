@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vue.js Login y Películas</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+        }
+
+        #app {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px; /* Ajuste para el formulario */
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input[type="text"],
+        input[type="password"] {
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .movies {
+            display: flex;
+            overflow-x: auto; /* Habilita el desplazamiento horizontal */
+            margin-top: 20px;
+            padding: 10px 0; /* Espaciado vertical */
+        }
+
+        .movie {
+            flex: 0 0 auto; /* Permite que cada película ocupe solo el espacio necesario */
+            text-align: center;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            margin: 0 10px; /* Espaciado horizontal entre películas */
+            transition: transform 0.2s;
+            cursor: pointer; /* Cambia el cursor al pasar sobre la película */
+        }
+
+        .movie:hover {
+            transform: scale(1.05);
+        }
+
+        .movie img {
+            width: 200px; /* Tamaño fijo para las imágenes */
+            height: auto; /* Mantiene la proporción de la imagen */
+            border-bottom: 1px solid #ccc;
+        }
+
+        .movie h4 {
+            padding: 10px 0;
+            font-size: 16px;
+            margin: 0;
+            color: #333;
+        }
+
+        .movie-details {
+            margin-top: 20px;
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+
+        <form v-if="!isLoggedIn" @submit.prevent="onSubmit">
+            <label for="correo">Usuario:</label>
+            <input type="text" id="userName" name="userName" v-model="userName" required>
+
+            <label for="pass">Contraseña:</label>
+            <input type="password" id="pass" name="pass" v-model="passw" required>
+
+            <button type="submit">Acceder</button>
+        </form>
+
+        <button v-if="isLoggedIn" @click="logout">Cerrar sesión</button>
+
+        <div class="movies" v-if="isLoggedIn">
+            <div class="movie" v-for="movie in movies" :key="movie.id">
+                <img :src="'https://image.tmdb.org/t/p/w500' + movie.poster_path" :alt="movie.title">
+                <h4>{{ movie.title }}</h4>
+                <button @click="viewDetails(movie)">view</button>
+                <button v-if="movie.userRating" @click="removeRating(movie)">Eliminar Rating</button>
+                <button v-else @click="rateMovie(movie)">Rating</button>
+            </div>
+        </div>
+
+        <div class="movie-details" v-if="selectedMovie">
+            <h3>Detalles de la película</h3>
+            <h4>{{ selectedMovie.title }}</h4>
+            <p><strong>Resumen:</strong> {{ selectedMovie.overview }}</p>
+            <p><strong>Popularidad:</strong> {{ selectedMovie.popularity }}</p>
+            <p><strong>Fecha de lanzamiento:</strong> {{ selectedMovie.release_date }}</p>
+            <p><strong>Idioma original:</strong> {{ selectedMovie.original_language }}</p>
+            <p><strong>Calificación promedio:</strong> {{ selectedMovie.vote_average }}</p>
+            <p><strong>Número de votos:</strong> {{ selectedMovie.vote_count }}</p>
+            <p><strong>Rating:</strong> {{ selectedMovie.userRating || 'No calificado' }}</p>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted } = Vue;
+        createApp({
+            setup() {
+                var userName = ref('');
+                var passw = ref('');
+                var isLoggedIn = ref(false);
+                var movies = ref([]);
+                var selectedMovie = ref(null);
+                onMounted(() => {
+                    const storedUser = sessionStorage.getItem('Usuario');
+                    if (storedUser) {
+                        isLoggedIn.value = true;
+                        userName.value = JSON.parse(storedUser).nombre;
+                    }
+                });
+
+                return {
+                    userName,
+                    passw,
+                    isLoggedIn,
+                    movies,
+                    selectedMovie
+                };
+            },
+            methods: {
+                async onSubmit() {
+                    try {
+                        const url = 'https://api.themoviedb.org/3/authentication/token/validate_with_login';
+                        const requestToken = 'a06d5ea0e2ffdd599f68d71b50846b402272c5cf';
+
+                        const response = await fetch(url, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIyNTU2OTBkZjg3ZGQ4YjQ1ZmQ0OGM2MjEzNzgzMjAxMiIsIm5iZiI6MTcyNzI1ODY2NS4yNzgyOTksInN1YiI6IjY2ZjJmNmRjMDIyMDhjNjdjODhkOWJjOSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.RYJ10-56maf3WKvBtfBuKdNw3adiiScbvIbt_7lNx7c',
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                username: this.userName,
+                                password: this.passw,
+                                request_token: requestToken
+                            })
+                        });
+
+                        if (!response.ok) {
+                            throw new Error(`Error en la autenticación: ${response.status}`);
+                        }
+
+                        const result = await response.json();
+
+                        if (result.success) {
+                            this.isLoggedIn = true;
+                            sessionStorage.setItem('Usuario', JSON.stringify({ nombre: this.userName }));
+                            this.showNotification("Bienvenido", "Has iniciado sesión correctamente");
+                            this.fetchMovies();
+                        } else {
+                            console.log("Credenciales inválidas.");
+                        }
+                    } catch (error) {
+                        console.error(error.message);
+                    }
+                },
+                async fetchMovies() {
+                    try {
+                        var myHeaders = new Headers();
+                        myHeaders.append("Authorization", "Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIyNTU2OTBkZjg3ZGQ4YjQ1ZmQ0OGM2MjEzNzgzMjAxMiIsIm5iZiI6MTcyNzI1ODY2NS4yNzgyOTksInN1YiI6IjY2ZjJmNmRjMDIyMDhjNjdjODhkOWJjOSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.RYJ10-56maf3WKvBtfBuKdNw3adiiScbvIbt_7lNx7c");
+                        const requestOptions = {
+                            method: 'GET',
+                            headers: myHeaders,
+                            redirect: 'follow'
+                        };
+
+                        const response = await fetch("https://api.themoviedb.org/3/movie/popular?language=es-ES&page=1", requestOptions);
+                        const data = await response.json();
+                        this.movies = data.results.map(movie => {
+                            return {
+                                ...movie,
+                                userRating: null
+                            };
+                        });
+                    } catch (error) {
+                        console.error(error.message);
+                    }
+                },
+                viewDetails(movie) {
+                    this.selectedMovie = movie;
+                },
+                async rateMovie(movie) {
+                    const rating = prompt("Ingresa tu calificación (1-10):");
+                    if (rating) {
+                        const url = `https://api.themoviedb.org/3/movie/${movie.id}/rating`;
+                        const requestToken = 'a06d5ea0e2ffdd599f68d71b50846b402272c5cf';
+                        const response = await fetch(url, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIyNTU2OTBkZjg3ZGQ4YjQ1ZmQ0OGM2MjEzNzgzMjAxMiIsIm5iZiI6MTcyNzI1ODY2NS4yNzgyOTksInN1YiI6IjY2ZjJmNmRjMDIyMDhjNjdjODhkOWJjOSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.RYJ10-56maf3WKvBtfBuKdNw3adiiScbvIbt_7lNx7c',
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                value: parseInt(rating)
+                            })
+                        });
+
+                        if (response.ok) {
+                            movie.userRating = rating;
+                            alert("Calificación guardada correctamente.");
+                        } else {
+                            alert("Error al guardar la calificación.");
+                        }
+                    }
+                },
+                async removeRating(movie) {
+                    const confirmation = confirm("¿Estás seguro de que quieres eliminar tu calificación?");
+                    if (confirmation) {
+                        const url = `https://api.themoviedb.org/3/movie/${movie.id}/rating`;
+                        const response = await fetch(url, {
+                            method: 'DELETE',
+                            headers: {
+                                'Authorization': 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIyNTU2OTBkZjg3ZGQ4YjQ1ZmQ0OGM2MjEzNzgzMjAxMiIsIm5iZiI6MTcyNzI1ODY2NS4yNzgyOTksInN1YiI6IjY2ZjJmNmRjMDIyMDhjNjdjODhkOWJjOSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.RYJ10-56maf3WKvBtfBuKdNw3adiiScbvIbt_7lNx7c'
+                            }
+                        });
+
+                        if (response.ok) {
+                            movie.userRating = null;
+                            alert("Calificación eliminada correctamente.");
+                        } else {
+                            alert("Error al eliminar la calificación.");
+                        }
+                    }
+                },
+                logout() {
+                    sessionStorage.removeItem('Usuario');
+                    this.isLoggedIn = false;
+                    this.movies = [];
+                    this.selectedMovie = null;
+                },
+                showNotification(title, message) {
+                    alert(`${title}: ${message}`);
+                }
+            }
+        }).mount('#app');
+    </script>
+
+</body>
+</html>
